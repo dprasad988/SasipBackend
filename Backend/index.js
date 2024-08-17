@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import dotenv from 'dotenv';
 import multer from 'multer';
 
+import  lecturerRoutes from'./Routes/lecturerRoutes.js';
 dotenv.config();
 
 const port = 5005;
@@ -12,7 +13,7 @@ app.use(cors());
 app.use(bodyParser.json());
 const upload = multer();
 
-
+app.use('/lecturers', lecturerRoutes);
 
 
 app.listen(port, () => {
