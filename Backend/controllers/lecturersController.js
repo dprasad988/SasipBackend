@@ -54,7 +54,6 @@ export const addLecturer = async (req, res) => {
       const profilePictureName = uuidv4() + path.extname(profilePicture.name);
       const remotePath = `/public_html/uploads/${profilePictureName}`;
 
-      // Upload to FTP
       await uploadFileToFTP(profilePicture.tempFilePath, remotePath);
 
       // Set profile picture URL
