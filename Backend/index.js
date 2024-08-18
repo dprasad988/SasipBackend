@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import multer from 'multer';
 
 import  lecturerRoutes from'./Routes/lecturerRoutes.js';
+import  timetableRoutes from'./Routes/timetableRoutes.js';
+
 dotenv.config();
 
 const port = 5005;
@@ -14,6 +16,8 @@ app.use(bodyParser.json());
 const upload = multer();
 
 app.use('/lecturers', lecturerRoutes);
+app.use('/timetables', timetableRoutes);
+
 
 
 app.listen(port, () => {

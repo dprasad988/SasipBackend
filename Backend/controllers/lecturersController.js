@@ -1,3 +1,4 @@
+import pool from '../db.js';
 
 export const getAllLecturers = async (req, res) => {
   try {
