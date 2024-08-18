@@ -9,6 +9,7 @@ async function uploadFileToFTP(file, destinationPath) {
   const client = new ftp.Client();
   client.ftp.verbose = true;
 
+
   try {
     await client.access({
       host: "ftp.orangered-quail-934133.hostingersite.com", // Replace with your FTP host
