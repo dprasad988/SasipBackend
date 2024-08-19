@@ -23,7 +23,7 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post('/', getAllLecturers);
+router.get('/', getAllLecturers);
 router.post('/', upload, addLecturer);
 router.put('/:lid', upload, updateLecturer);
 router.delete('/:lid', deleteLecturer);
