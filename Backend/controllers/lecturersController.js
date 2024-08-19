@@ -1,36 +1,11 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { uploadFileToSFTP } from '../ftpUpload.js';
 import pool from "../db.js";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { fileURLToPath } from "url";
-import ftp from "basic-ftp";
 
-// FTP Upload Helper Function
-async function uploadFileToFTP(file, destinationPath) {
-  const client = new ftp.Client();
-  client.ftp.verbose = true;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-
-  try {
-    await client.access({
-      host: "ftp.orangered-quail-934133.hostingersite.com", // Replace with your FTP host
-      user: "u543552070.supun", // Replace with your FTP username
-      password: "Sasip.1234", // Replace with your FTP password
-      secure: false,
-    });
-
-    console.log("Connected to FTP server");
-
-    await client.uploadFrom(file, destinationPath);
-    console.log(`File uploaded to ${destinationPath}`);
-  } catch (err) {
-    console.error("FTP upload error:", err);
-    throw new Error("Failed to upload file to FTP server");
-  } finally {
-    client.close();
-  }
-}
-
-// Add a new lecturer
 export const addLecturer = async (req, res) => {
   const {
     name,
@@ -46,21 +21,29 @@ export const addLecturer = async (req, res) => {
   } = req.body;
 
   let profilePictureUrl = null;
+  const qualificationsWithIcons = [];
 
   try {
     // Handle profile picture upload
-    if (req.files && req.files.profilePicture) {
-      const profilePicture = req.files.profilePicture;
-      const profilePictureName = uuidv4() + path.extname(profilePicture.name);
-      const remotePath = `/public_html/uploads/${profilePictureName}`;
-
-      await uploadFileToFTP(profilePicture.tempFilePath, remotePath);
-
-      // Set profile picture URL
-      profilePictureUrl = `https://your-domain.com/uploads/${profilePictureName}`;
+    if (req.files['profilePicture'] && req.files['profilePicture'][0]) {
+      const fileBuffer = req.files['profilePicture'][0].buffer;
+      const remoteFileName = req.files['profilePicture'][0].originalname;
+      profilePictureUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
     }
 
-    // Insert lecturer into the database
+    // Handle qualifications upload
+    for (let i = 0; i < qualifications.length; i++) {
+      const qualification = qualifications[i];
+      if (req.files[`qualifications[${i}][icon]`] && req.files[`qualifications[${i}][icon]`][0]) {
+        const iconBuffer = req.files[`qualifications[${i}][icon]`][0].buffer;
+        const iconRemoteFileName = req.files[`qualifications[${i}][icon]`][0].originalname;
+        const iconUrl = await uploadFileToSFTP(iconBuffer, iconRemoteFileName);
+        qualificationsWithIcons.push({ ...qualification, icon: iconUrl });
+      } else {
+        qualificationsWithIcons.push(qualification);
+      }
+    }
+
     const [result] = await pool.query(
       `INSERT INTO lecturers (
         profilePicture, name, contact, subject, stream, class_type, medium, bio, experience, social_media_youtube, social_media_facebook, social_media_website, qualifications
@@ -78,15 +61,17 @@ export const addLecturer = async (req, res) => {
         socialMedia.youtube || null,
         socialMedia.facebook || null,
         socialMedia.website || null,
-        JSON.stringify(qualifications) || null,
+        JSON.stringify(qualificationsWithIcons) || null,
       ]
     );
 
     res.status(201).json({ lid: result.insertId });
   } catch (error) {
+    console.error('Error adding lecturer:', error);
     res.status(500).send(`Error adding lecturer: ${error.message}`);
   }
 };
+
 
 // Update an existing lecturer
 export const updateLecturer = async (req, res) => {
