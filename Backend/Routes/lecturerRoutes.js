@@ -5,6 +5,7 @@ import {
   addLecturer,
   updateLecturer,
   deleteLecturer,
+  getLecturerById
 } from "../controllers/lecturersController.js";
 
 const storage = multer.memoryStorage(); 
@@ -23,7 +24,8 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post('/', getAllLecturers);
+router.get('/', getAllLecturers);
+router.get('/:lid', getLecturerById);
 router.post('/', upload, addLecturer);
 router.put('/:lid', upload, updateLecturer);
 router.delete('/:lid', deleteLecturer);
