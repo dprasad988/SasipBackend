@@ -185,9 +185,7 @@ export const getLecturerById = async (req, res) => {
       return res.status(404).send("Lecturer not found");
     }
 
-    const [qualificationRows] = await pool.query("SELECT * FROM qualifications WHERE lecturer_id = ?", [lid]);
-
-    res.json({ ...lecturerRows[0], qualifications: qualificationRows });
+    res.json({ ...lecturerRows[0] });
   } catch (error) {
     res.status(500).send(`Error retrieving lecturer: ${error.message}`);
   }
