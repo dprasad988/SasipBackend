@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import fileUpload from 'express-fileupload';
 import  lecturerRoutes from'./Routes/lecturerRoutes.js';
 import  timetableRoutes from'./Routes/timetableRoutes.js';
+import  classTypeRouter from'./Routes/classTypeRoutes.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(fileUpload({
 // Routes
 app.use('/lecturers', lecturerRoutes);
 app.use('/timetables', timetableRoutes);
+app.use('/classType', classTypeRouter);
 
 
 
