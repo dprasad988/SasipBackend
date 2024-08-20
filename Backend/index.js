@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import fileUpload from 'express-fileupload';
 import  lecturerRoutes from'./Routes/lecturerRoutes.js';
 import  timetableRoutes from'./Routes/timetableRoutes.js';
 import  classTypeRouter from'./Routes/classTypeRoutes.js';
@@ -14,17 +13,12 @@ const app = express();
 
 // Middleware setup
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-app.use(fileUpload({
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB file size limit
-}));
+app.use(bodyParser.json());
 
 // Routes
 app.use('/lecturers', lecturerRoutes);
 app.use('/timetables', timetableRoutes);
 app.use('/classType', classTypeRouter);
-
 
 
 app.listen(port, () => {
