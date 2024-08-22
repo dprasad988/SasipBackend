@@ -1,5 +1,6 @@
 // controllers/classTypeController.js
-import db from '../db.js';
+import db from "../db.js";
+
 
 // Get all class types
 const getAllClassTypes = async (req, res) => {

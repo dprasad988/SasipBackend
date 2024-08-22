@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import  lecturerRoutes from'./Routes/lecturerRoutes.js';
 import  timetableRoutes from'./Routes/timetableRoutes.js';
 import  classTypeRouter from'./Routes/classTypeRoutes.js';
+import  newsRouter from'./Routes/newsRouter.js';
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use('/lecturers', lecturerRoutes);
 app.use('/timetables', timetableRoutes);
 app.use('/classType', classTypeRouter);
+app.use('/news', newsRouter);
 
 
 app.listen(port, () => {
