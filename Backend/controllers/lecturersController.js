@@ -16,9 +16,12 @@ export const addLecturer = async (req, res) => {
     medium = [],
     bio = '',
     experience = '',
-    socialMedia = { facebook: '', website: '', youtube: '' },
+    facebook = '',
+    youtube = '',
+    website = '' ,
     qualifications = [],
   } = req.body;
+  console.log('first', req.body);
 
   let profilePictureUrl = null;
   const qualificationsWithIcons = [];
@@ -58,9 +61,9 @@ export const addLecturer = async (req, res) => {
         JSON.stringify(medium) || null,
         bio || null,
         experience || null,
-        socialMedia.youtube || null,
-        socialMedia.facebook || null,
-        socialMedia.website || null,
+        youtube || null,
+        facebook || null,
+        website || null,
         JSON.stringify(qualificationsWithIcons) || null,
       ]
     );

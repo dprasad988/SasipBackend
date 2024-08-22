@@ -12,7 +12,6 @@ export const getAllTimetables = async (req, res) => {
 export const getPrice = async (req, res) => {
   try {
     const [results] = await pool.query("SELECT * FROM prices");
-    console.log('Price sessions fetched:', results);
     res.json(results);
   } catch (error) {
     res.status(500).send(error.message);
@@ -21,7 +20,6 @@ export const getPrice = async (req, res) => {
 
 export const updatePrice = async (req, res) => {
   const { id, classType, price, pStatus } = req.body;
-  console.log('req.body', req.body)
 
   try {
     const [results] = await pool.query(
@@ -33,17 +31,14 @@ export const updatePrice = async (req, res) => {
       return res.status(404).send('Price record not found');
     }
 
-    console.log('Price record updated:', results);
     res.status(200).send('Price record updated successfully');
   } catch (error) {
-    console.error('Error updating price record:', error);
     res.status(500).send(error.message);
   }
 };
 
 export const deletePrice = async (req, res) => {
   const { id } = req.params;
-  console.log('req.params', req.params);
 
   try {
     const [results] = await pool.query(
@@ -55,10 +50,8 @@ export const deletePrice = async (req, res) => {
       return res.status(404).send('Price record not found');
     }
 
-    console.log('Price record deleted:', results);
     res.status(200).send('Price record deleted successfully');
   } catch (error) {
-    console.error('Error deleting price record:', error);
     res.status(500).send(error.message);
   }
 };
