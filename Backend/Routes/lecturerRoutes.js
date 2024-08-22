@@ -11,7 +11,7 @@ import {
 const storage = multer.memoryStorage(); 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
 }).fields([
   { name: 'profilePicture', maxCount: 1 }, 
   { name: 'qualifications[0][icon]', maxCount: 1 }, 
