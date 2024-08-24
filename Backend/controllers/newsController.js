@@ -1,4 +1,11 @@
 import pool from "../db.js";
+import { fileURLToPath } from 'url';
+import { uploadFileToSFTP } from '../ftpUpload.js';
+import { deleteFileFromSFTP } from '../ftpUpload.js';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const getAllNews = async (req, res) => {
   try {
@@ -13,9 +20,9 @@ export const addNews = async (req, res) => {
   const { lid, title, description, whatsapp, newsStatus } = req.body;
   let newsImageUrl = null;
 
-  if (req.files["image"] && req.files["image"][0]) {
-    const fileBuffer = req.files["image"][0].buffer;
-    const remoteFileName = req.files["image"][0].originalname;
+  if (req.files['image'] && req.files['image'][0]) {
+    const fileBuffer = req.files['image'][0].buffer;
+    const remoteFileName = req.files['image'][0].originalname;
     newsImageUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
   }
   if (!lid || !title || !description || !whatsapp || !newsStatus) {
@@ -43,14 +50,13 @@ export const addNews = async (req, res) => {
 export const updateNews = async (req, res) => {
   const { id } = req.params;
   const { lid, title, description, whatsapp, newsStatus, image } = req.body;
-
   if (!lid || !title || !description || !whatsapp || !newsStatus) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
     const [result] = await pool.query(
-      "UPDATE news SET lid = ?, title = ?, description = ?, whatsapp = ?, newsStatus = ?, image = ? WHERE id = ?",
+      "UPDATE news SET lid = ?, title = ?, description = ?, whatsapp = ?, newsStatus = ?, image = ? WHERE nid = ?",
       [lid, title, description, whatsapp, newsStatus, image, id]
     );
 
@@ -66,15 +72,31 @@ export const updateNews = async (req, res) => {
 
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
+console.log(id);
 
   try {
-    const [result] = await pool.query("DELETE FROM news WHERE id = ?", [id]);
+    // Retrieve the image URL before deleting the news
+    const [rows] = await pool.query("SELECT image FROM news WHERE nid = ?", [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "News not found" });
+    }
+    const newsImageUrl = rows[0].image;
+ console.log(newsImageUrl);
+ 
+    // Delete the image from SFTP if it exists
+    if (newsImageUrl) {
+      await deleteFileFromSFTP(newsImageUrl);
+    }
+
+    // Delete the news record from the database
+    const [result] = await pool.query("DELETE FROM news WHERE nid = ?", [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "News not found" });
     }
 
-    res.json({ message: "News deleted successfully" });
+    res.json({ message: "News and associated image deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
