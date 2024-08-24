@@ -16,34 +16,41 @@ export const addLecturer = async (req, res) => {
     medium = [],
     bio = '',
     experience = '',
-    socialMedia = { facebook: '', website: '', youtube: '' },
+    facebook = '',
+    youtube = '',
+    website = '' ,
     qualifications = [],
   } = req.body;
 
-  let profilePictureUrl = null;
+  console.log('Adding Lecturer:', req.body);
+  console.log('Files:', req.files);
+
+  let profilePictureUrl = 'https://i.pinimg.com/originals/07/33/ba/0733ba760b29378474dea0fdbcb97107.png';
   const qualificationsWithIcons = [];
 
   try {
     // Handle profile picture upload
-    if (req.files['profilePicture'] && req.files['profilePicture'][0]) {
-      const fileBuffer = req.files['profilePicture'][0].buffer;
-      const remoteFileName = req.files['profilePicture'][0].originalname;
+    const profilePictureFile = req.files.find(file => file.fieldname === 'profilePicture');
+    if (profilePictureFile) {
+      const fileBuffer = profilePictureFile.buffer;
+      const remoteFileName = profilePictureFile.originalname;
       profilePictureUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
     }
 
     // Handle qualifications upload
     for (let i = 0; i < qualifications.length; i++) {
       const qualification = qualifications[i];
-      if (req.files[`qualifications[${i}][icon]`] && req.files[`qualifications[${i}][icon]`][0]) {
-        const iconBuffer = req.files[`qualifications[${i}][icon]`][0].buffer;
-        const iconRemoteFileName = req.files[`qualifications[${i}][icon]`][0].originalname;
-        const iconUrl = await uploadFileToSFTP(iconBuffer, iconRemoteFileName);
-        qualificationsWithIcons.push({ ...qualification, icon: iconUrl });
-      } else {
-        qualificationsWithIcons.push(qualification);
+      const iconFile = req.files.find(file => file.fieldname === `qualifications[${i}][icon]`);
+      let iconUrl = null;
+      if (iconFile) {
+        const iconBuffer = iconFile.buffer;
+        const iconRemoteFileName = iconFile.originalname;
+        iconUrl = await uploadFileToSFTP(iconBuffer, iconRemoteFileName);
       }
+      qualificationsWithIcons.push({ ...qualification, icon: iconUrl });
     }
 
+    // Perform the insert query
     const [result] = await pool.query(
       `INSERT INTO lecturers (
         profilePicture, name, contact, subject, stream, class_type, medium, bio, experience, social_media_youtube, social_media_facebook, social_media_website, qualifications
@@ -58,9 +65,9 @@ export const addLecturer = async (req, res) => {
         JSON.stringify(medium) || null,
         bio || null,
         experience || null,
-        socialMedia.youtube || null,
-        socialMedia.facebook || null,
-        socialMedia.website || null,
+        youtube || null,
+        facebook || null,
+        website || null,
         JSON.stringify(qualificationsWithIcons) || null,
       ]
     );
@@ -73,83 +80,109 @@ export const addLecturer = async (req, res) => {
 };
 
 
-// Update an existing lecturer
 export const updateLecturer = async (req, res) => {
   const { lid } = req.params;
   const {
-    profilePicture,
     name,
     contact,
     subject,
     stream,
-    classType,
-    medium,
-    bio,
-    experience,
-    socialMedia: { facebook, website, youtube },
-    qualifications,
+    classType = [],
+    medium = [],
+    bio = '',
+    experience = '',
+    social_media_facebook = '',
+    social_media_youtube = '',
+    social_media_website = '',
+    qualifications: qualificationsString = '[]',
   } = req.body;
-
-  let profilePictureUrl = profilePicture;
+  console.log(req.body);
+  
 
   try {
-    // Handle profile picture update
-    if (req.files && req.files.profilePicture) {
-      const newProfilePicture = req.files.profilePicture;
-      const profilePictureName = uuidv4() + path.extname(newProfilePicture.name);
-      const remotePath = `/public_html/uploads/${profilePictureName}`;
-
-      // Upload to FTP
-      await uploadFileToFTP(newProfilePicture.tempFilePath, remotePath);
-
-      profilePictureUrl = `https://your-domain.com/uploads/${profilePictureName}`;
-    }
-
-    await pool.query(
-      `UPDATE lecturers SET
-        profilePicture = ?, name = ?, contact = ?, subject = ?, stream = ?, class_type = ?, medium = ?, bio = ?, experience = ?, social_media_youtube = ?, social_media_facebook = ?, social_media_website = ?
-       WHERE lid = ?`,
-      [
-        profilePictureUrl,
-        name,
-        contact,
-        subject,
-        stream,
-        JSON.stringify(classType),
-        JSON.stringify(medium),
-        bio,
-        experience,
-        youtube,
-        facebook,
-        website,
-        lid,
-      ]
+    // Fetch existing lecturer data
+    const [existingLecturerRows] = await pool.query(
+      `SELECT * FROM lecturers WHERE lid = ?`,
+      [lid]
     );
 
-    // Delete existing qualifications for the lecturer
-    await pool.query(`DELETE FROM qualifications WHERE lecturer_id = ?`, [lid]);
-
-    // Insert new qualifications
-    for (let qualification of qualifications) {
-      const { name: qName, description: qDescription, icon: qIcon } = qualification;
-      const iconFile = req.files[qIcon];
-
-      const iconName = uuidv4() + path.extname(iconFile.name);
-      const remoteIconPath = `/public_html/uploads/${iconName}`;
-
-      // Upload qualification icon to FTP
-      await uploadFileToFTP(iconFile.tempFilePath, remoteIconPath);
-
-      const iconUrl = `https://your-domain.com/uploads/${iconName}`;
-
-      await pool.query(
-        `INSERT INTO qualifications (lecturer_id, name, description, icon) VALUES (?, ?, ?, ?)`,
-        [lid, qName, qDescription, iconUrl]
-      );
+    if (existingLecturerRows.length === 0) {
+      return res.status(404).send('Lecturer not found');
     }
 
-    res.status(200).send("Lecturer updated");
+    const existingLecturer = existingLecturerRows[0];
+
+    // Initialize fields with existing data or provided data
+    let profilePictureUrl = existingLecturer.profilePicture;
+    let qualifications = JSON.parse(qualificationsString) || JSON.parse(existingLecturer.qualifications || '[]');
+    let classTypeUpdate = classType.length ? JSON.stringify(classType) : JSON.stringify(existingLecturer.class_type);
+    let mediumUpdate = medium.length ? JSON.stringify(medium) : JSON.stringify(existingLecturer.medium);
+    let bioUpdate = bio || existingLecturer.bio;
+    let experienceUpdate = experience || existingLecturer.experience;
+    let facebookUpdate = social_media_facebook;
+    let youtubeUpdate = social_media_youtube;
+    let websiteUpdate = social_media_website;
+
+    // Handle profile picture upload if a new one is provided
+    const profilePictureFile = req.files.find(file => file.fieldname === 'profilePicture');
+    if (profilePictureFile) {
+      profilePictureUrl = await uploadFileToSFTP(profilePictureFile.buffer, profilePictureFile.originalname);
+    }
+
+    // Handle qualifications upload
+    for (const file of req.files) {
+      const match = file.fieldname.match(/qualifications\[(\d+)\]\[icon\]/);
+      if (match) {
+        const qualificationIndex = parseInt(match[1], 10);
+        const iconUrl = await uploadFileToSFTP(file.buffer, file.originalname);
+        qualifications[qualificationIndex] = {
+          ...qualifications[qualificationIndex],
+          icon: iconUrl
+        };
+      }
+    }
+
+    // Construct the update query
+    const updateQuery = `
+      UPDATE lecturers SET 
+        profilePicture = ?, 
+        name = ?, 
+        contact = ?, 
+        subject = ?, 
+        stream = ?, 
+        class_type = ?, 
+        medium = ?, 
+        bio = ?, 
+        experience = ?, 
+        social_media_youtube = ?, 
+        social_media_facebook = ?, 
+        social_media_website = ?, 
+        qualifications = ?
+      WHERE lid = ?`;
+
+    const updateValues = [
+      profilePictureUrl,
+      name || existingLecturer.name,
+      contact || existingLecturer.contact,
+      subject || existingLecturer.subject,
+      stream || existingLecturer.stream,
+      classTypeUpdate,
+      mediumUpdate,
+      bioUpdate,
+      experienceUpdate,
+      youtubeUpdate,
+      facebookUpdate,
+      websiteUpdate,
+      JSON.stringify(qualifications),
+      lid
+    ];
+
+    // Perform the update query
+    await pool.query(updateQuery, updateValues);
+
+    res.status(200).json({ message: 'Lecturer updated successfully' });
   } catch (error) {
+    console.error('Error updating lecturer:', error);
     res.status(500).send(`Error updating lecturer: ${error.message}`);
   }
 };
@@ -158,8 +191,7 @@ export const updateLecturer = async (req, res) => {
 export const deleteLecturer = async (req, res) => {
   const { lid } = req.params;
   try {
-    await pool.query("DELETE FROM qualifications WHERE lecturer_id = ?", [lid]); // Delete related qualifications first
-    await pool.query("DELETE FROM lecturers WHERE lid = ?", [lid]); // Then delete the lecturer
+    await pool.query("DELETE FROM lecturers WHERE lid = ?", [lid]); 
     res.status(200).send("Lecturer deleted");
   } catch (error) {
     res.status(500).send(`Error deleting lecturer: ${error.message}`);
