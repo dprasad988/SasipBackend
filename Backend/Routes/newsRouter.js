@@ -5,7 +5,7 @@ import {
   updateNews,
   deleteNews,
 } from "../controllers/newsController.js";
-
+import multer from "multer";
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -14,7 +14,7 @@ const upload = multer({
 }).fields([{ name: "image", maxCount: 1 }]);
 
 router.get("/", getAllNews);
-router.post("/", addNews);
+router.post("/",upload, addNews);
 router.put("/:id", updateNews);
 router.delete("/:id", deleteNews);
 
