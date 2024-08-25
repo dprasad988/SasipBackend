@@ -9,6 +9,7 @@ import  newsRouter from'./Routes/newsRouter.js';
 import  albumsRouter from'./Routes/albumsRouter.js';
 import  albumImagesRoutes from'./Routes/albumImagesRoutes.js';
 import  videoRouter from'./Routes/videoRouter.js';
+import  formRouter from'./Routes/formRoutes.js';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/news', newsRouter);
 app.use('/albums', albumsRouter);
 app.use('/albums/images', albumImagesRoutes);
 app.use('/videos', videoRouter);
+app.use('/form', formRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
