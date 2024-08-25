@@ -14,14 +14,16 @@ export const getAllEntries = async (req, res) => {
 
 // Create a new form entry
 export const createEntry = async (req, res) => {
-    const { title, googleForm, status } = req.body;
+    const { title, google_form_link, status } = req.body;
+    console.log(req.body);
+    
 
     try {
         const [result] = await db.query(
             'INSERT INTO FormEntries (title, google_form_link, status) VALUES (?, ?, ?)',
-            [title, googleForm, status]
+            [title, google_form_link, status]
         );
-        res.status(201).json({ id: result.insertId, title, googleForm, status });
+        res.status(201).json({ id: result.insertId, title, google_form_link, status });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
