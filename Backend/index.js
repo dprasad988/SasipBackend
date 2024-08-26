@@ -11,6 +11,7 @@ import  albumImagesRoutes from'./Routes/albumImagesRoutes.js';
 import  videoRouter from'./Routes/videoRouter.js';
 import  formRouter from'./Routes/formRoutes.js';
 import  landingRouter from'./Routes/landingRouter.js';
+import  landingTitlesRouter from'./Routes/landingTitlesRouter.js';
 
 dotenv.config();
 
@@ -32,7 +33,7 @@ app.use('/albums/images', albumImagesRoutes);
 app.use('/videos', videoRouter);
 app.use('/form', formRouter);
 app.use('/landing', landingRouter);
-
+app.use('/landing-titles', landingTitlesRouter);
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
