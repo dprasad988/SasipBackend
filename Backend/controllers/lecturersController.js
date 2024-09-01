@@ -190,11 +190,25 @@ export const updateLecturer = async (req, res) => {
 // Delete a lecturer
 export const deleteLecturer = async (req, res) => {
   const { lid } = req.params;
+  const connection = await pool.getConnection();
+
   try {
-    await pool.query("DELETE FROM lecturers WHERE lid = ?", [lid]); 
-    res.status(200).send("Lecturer deleted");
+    await connection.beginTransaction(); 
+
+    await connection.query("DELETE FROM news WHERE lid = ?", [lid]);
+
+    await connection.query("DELETE FROM tutes WHERE lid = ?", [lid]);
+
+    await connection.query("DELETE FROM lecturers WHERE lid = ?", [lid]);
+
+    await connection.commit();
+
+    res.status(200).send("Lecturer and associated news and tutes entries deleted successfully");
   } catch (error) {
+    await connection.rollback(); 
     res.status(500).send(`Error deleting lecturer: ${error.message}`);
+  } finally {
+    connection.release(); 
   }
 };
 

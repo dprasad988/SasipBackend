@@ -38,7 +38,7 @@ export const createTute = async (req, res) => {
 
 // Update an existing tute
 export const updateTute = async (req, res) => {
-  const { id } = req.params;
+  const { lid } = req.params;
   const { title = '', subtitle = '', description = '', status = '' } = req.body;
 
   console.log('Updating Tute:', req.body);
@@ -59,7 +59,7 @@ export const updateTute = async (req, res) => {
         description = COALESCE(?, description), 
         status = COALESCE(?, status),
         lid
-      WHERE id = ?`;
+      WHERE tute_id = ?`;
 
     const updateValues = [
       title,
