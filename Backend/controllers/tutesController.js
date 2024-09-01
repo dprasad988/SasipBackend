@@ -38,8 +38,8 @@ export const createTute = async (req, res) => {
 
 // Update an existing tute
 export const updateTute = async (req, res) => {
-  const { lid } = req.params;
-  const { title = '', subtitle = '', description = '', status = '' } = req.body;
+  const { tute_id } = req.params;
+  const { title = '', subtitle = '', description = '', status = '', lid = null } = req.body; // Extract lid from req.body
 
   console.log('Updating Tute:', req.body);
 
@@ -58,7 +58,7 @@ export const updateTute = async (req, res) => {
         cover_photo = COALESCE(?, cover_photo), 
         description = COALESCE(?, description), 
         status = COALESCE(?, status),
-        lid
+        lid = COALESCE(?, lid)  -- Correctly assigning the lid value
       WHERE tute_id = ?`;
 
     const updateValues = [
@@ -67,7 +67,8 @@ export const updateTute = async (req, res) => {
       coverPhotoUrl,
       description,
       status,
-      lid
+      lid,  // Include the lid value in the updateValues array
+      tute_id 
     ];
 
     await pool.query(updateQuery, updateValues);
