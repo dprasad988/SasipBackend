@@ -72,7 +72,6 @@ export const updateNews = async (req, res) => {
 
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
-console.log(id);
 
   try {
     // Retrieve the image URL before deleting the news
@@ -82,7 +81,6 @@ console.log(id);
       return res.status(404).json({ error: "News not found" });
     }
     const newsImageUrl = rows[0].image;
- console.log(newsImageUrl);
  
     // Delete the image from SFTP if it exists
     if (newsImageUrl) {
