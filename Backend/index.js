@@ -14,6 +14,7 @@ import  landingRouter from'./Routes/landingRouter.js';
 import  landingTitlesRouter from'./Routes/landingTitlesRouter.js';
 import  tutesRoutes from'./Routes/tutesRoutes.js';
 import  authRoutes from'./Routes/authRoutes.js';
+import  contactUsRoutes from'./Routes/contactUsRoutes.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/form', formRouter);
 app.use('/landing', landingRouter);
 app.use('/landing-titles', landingTitlesRouter);
 app.use('/tutes', tutesRoutes);
+app.use('/contact', contactUsRoutes);
 
 
 app.listen(port, () => {
