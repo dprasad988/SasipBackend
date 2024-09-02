@@ -12,6 +12,7 @@ import  videoRouter from'./Routes/videoRouter.js';
 import  formRouter from'./Routes/formRoutes.js';
 import  landingRouter from'./Routes/landingRouter.js';
 import  landingTitlesRouter from'./Routes/landingTitlesRouter.js';
+import  staffRouter from'./Routes/staffRoutes.js';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/videos', videoRouter);
 app.use('/form', formRouter);
 app.use('/landing', landingRouter);
 app.use('/landing-titles', landingTitlesRouter);
+app.use('/staff', staffRouter);
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

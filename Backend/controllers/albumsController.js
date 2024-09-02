@@ -9,10 +9,6 @@ const __dirname = path.dirname(__filename);
 // Create a new album
 export const createAlbum = async (req, res) => {
     const { name } = req.body;
-  
-    console.log('Creating Album:', req.body);
-    console.log('Files:', req.files);
-  
     let coverPhotoUrl = null;
     const imageUrls = [];
   
