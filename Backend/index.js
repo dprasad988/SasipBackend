@@ -12,6 +12,7 @@ import  videoRouter from'./Routes/videoRouter.js';
 import  formRouter from'./Routes/formRoutes.js';
 import  landingRouter from'./Routes/landingRouter.js';
 import  landingTitlesRouter from'./Routes/landingTitlesRouter.js';
+import  staffRouter from'./Routes/staffRoutes.js';
 import  tutesRoutes from'./Routes/tutesRoutes.js';
 import  authRoutes from'./Routes/authRoutes.js';
 import  contactUsRoutes from'./Routes/contactUsRoutes.js';
@@ -38,6 +39,7 @@ app.use('/videos', videoRouter);
 app.use('/form', formRouter);
 app.use('/landing', landingRouter);
 app.use('/landing-titles', landingTitlesRouter);
+app.use('/staff', staffRouter);
 app.use('/tutes', tutesRoutes);
 app.use('/contact', contactUsRoutes);
 
