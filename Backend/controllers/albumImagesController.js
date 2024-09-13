@@ -64,3 +64,19 @@ export const updateAlbumImages = async (req, res) => {
         res.status(500).json({ message: 'Failed to update images.', error: error.message });
     }
 };
+
+  export const getTotalImagesCount = async (req, res) => {
+    try {
+      // Query to get the count of all images in the album_images table
+      const [results] = await pool.query(
+        'SELECT COUNT(*) AS count FROM album_images'
+      );
+
+      const count = results[0].count;
+
+      res.status(200).json({ count });
+    } catch (error) {
+      console.error('Error retrieving total images count:', error);
+      res.status(500).json({ message: 'Failed to retrieve total images count.', error: error.message });
+    }
+  };

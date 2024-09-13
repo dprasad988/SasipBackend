@@ -10,15 +10,14 @@ const __dirname = path.dirname(__filename);
 export const createTute = async (req, res) => {
   const { title, subtitle, description, status, lid } = req.body;
 
-  console.log('Creating Tute:', req.body);
-
   let coverPhotoUrl = null;
 
   try {
     // Handle cover photo upload
     const coverPhotoFile = req.files.find(file => file.fieldname === 'coverPhoto');
     if (coverPhotoFile) {
-      coverPhotoUrl = await uploadFileToSFTP(coverPhotoFile.buffer, coverPhotoFile.originalname);
+      const filename = getTimestampedFilename(coverPhotoFile.originalname);
+      coverPhotoUrl = await uploadFileToSFTP(coverPhotoFile.buffer, filename);
     }
 
     // Insert into tutes table
@@ -36,19 +35,27 @@ export const createTute = async (req, res) => {
   }
 };
 
+const getTimestampedFilename = (originalname) => {
+  const ext = path.extname(originalname);
+  const baseName = path.basename(originalname, ext);
+  const timestamp = Date.now(); // Current timestamp in milliseconds
+  return `${baseName}_${timestamp}${ext}`;
+};
+
 // Update an existing tute
 export const updateTute = async (req, res) => {
   const { tute_id } = req.params;
-  const { title = '', subtitle = '', description = '', status = '', lid = null } = req.body; // Extract lid from req.body
-
-  console.log('Updating Tute:', req.body);
-
+  const { title = '', subtitle = '', description = '', status = '', lid = '' } = req.body;
+  
   try {
     let coverPhotoUrl = null;
 
-    const coverPhotoFile = req.files.find(file => file.fieldname === 'coverPhoto');
-    if (coverPhotoFile) {
-      coverPhotoUrl = await uploadFileToSFTP(coverPhotoFile.buffer, coverPhotoFile.originalname);
+    if (req.files && req.files.length > 0) {
+      const coverPhotoFile = req.files.find(file => file.fieldname === 'coverPhoto');
+      if (coverPhotoFile) {
+        const filename = getTimestampedFilename(coverPhotoFile.originalname);
+        coverPhotoUrl = await uploadFileToSFTP(coverPhotoFile.buffer, filename);
+      }
     }
 
     const updateQuery = `
@@ -58,7 +65,7 @@ export const updateTute = async (req, res) => {
         cover_photo = COALESCE(?, cover_photo), 
         description = COALESCE(?, description), 
         status = COALESCE(?, status),
-        lid = COALESCE(?, lid)  -- Correctly assigning the lid value
+        lid = COALESCE(?, lid)
       WHERE tute_id = ?`;
 
     const updateValues = [
@@ -67,13 +74,17 @@ export const updateTute = async (req, res) => {
       coverPhotoUrl,
       description,
       status,
-      lid,  // Include the lid value in the updateValues array
-      tute_id 
+      lid,
+      tute_id
     ];
 
-    await pool.query(updateQuery, updateValues);
+    const [result] = await pool.query(updateQuery, updateValues);
 
-    res.status(200).json({ message: 'Tute updated successfully' });
+    if (result.affectedRows > 0) {
+      res.status(200).json({ message: 'Tute updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Tute not found' });
+    }
   } catch (error) {
     console.error('Error updating tute:', error);
     res.status(500).send(`Error updating tute: ${error.message}`);
@@ -83,7 +94,6 @@ export const updateTute = async (req, res) => {
 // Delete a tute
 export const deleteTute = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
   
   try {
     await pool.query("DELETE FROM tutes WHERE tute_id = ?", [id]);
@@ -94,10 +104,42 @@ export const deleteTute = async (req, res) => {
   }
 };
 
-// Get all tutes
 export const getAllTutes = async (req, res) => {
   try {
-    // Query to get tutes
+    // Query to get tutes along with lecturer information
+    const query = `
+      SELECT 
+        tutes.tute_id,
+        tutes.title,
+        tutes.subtitle,
+        tutes.cover_photo,
+        tutes.description,
+        tutes.status,
+        tutes.lid,
+        lecturers.name AS lecturer_name
+      FROM 
+        tutes
+      JOIN 
+        lecturers ON tutes.lid = lecturers.lid
+    `;
+
+    // Execute the query
+    const [rows] = await pool.query(query);
+
+    // Return the rows as a response
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching tutes with lecturers:", error);
+    res.status(500).json({ error: "Failed to fetch tutes with lecturers" });
+  }
+};
+
+
+export const getTutesByTeacherId = async (req, res) => {
+  const { lid } = req.params;
+  
+  try {
+    // Query to get tutes by teacher ID
     const query = `
       SELECT 
         tute_id,
@@ -109,9 +151,11 @@ export const getAllTutes = async (req, res) => {
         lid
       FROM 
         tutes
+      WHERE
+        lid = ?
     `;
 
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(query, [lid]);
 
     res.json(rows);
   } catch (error) {
@@ -119,3 +163,4 @@ export const getAllTutes = async (req, res) => {
     res.status(500).send(`Error retrieving tutes: ${error.message}`);
   }
 };
+

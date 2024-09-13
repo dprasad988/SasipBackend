@@ -16,6 +16,21 @@ export const getAllNews = async (req, res) => {
   }
 };
 
+export const getNewsCount = async (req, res) => {
+  const connection = await pool.getConnection();
+
+  try {
+    const [rows] = await connection.query("SELECT COUNT(*) AS count FROM news");
+    const count = rows[0].count;
+    
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    connection.release(); 
+  }
+};
+
 export const addNews = async (req, res) => {
   const { lid, title, description, whatsapp, newsStatus } = req.body;
   let newsImageUrl = null;

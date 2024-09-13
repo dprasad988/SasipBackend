@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { deleteImage, updateAlbumImages } from "../controllers/albumImagesController.js";
+import { deleteImage, getTotalImagesCount, updateAlbumImages } from "../controllers/albumImagesController.js";
 
 
 const storage = multer.memoryStorage(); 
@@ -13,5 +13,6 @@ const router = express.Router();
 
 router.delete('/:aid', deleteImage);
 router.put('/:aid', upload.any(), updateAlbumImages);
+router.get('/count', getTotalImagesCount);
 
 export default router;

@@ -9,6 +9,17 @@ export const getAllTimetables = async (req, res) => {
   }
 };
 
+export const getTimetablesCount = async (req, res) => {
+  try {
+    const [results] = await pool.query("SELECT COUNT(*) AS count FROM timetables");
+    const count = results[0].count;
+    
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 export const getPrice = async (req, res) => {
   try {
     const [results] = await pool.query("SELECT * FROM prices");
@@ -19,12 +30,12 @@ export const getPrice = async (req, res) => {
 };
 
 export const updatePrice = async (req, res) => {
-  const { id, classType, price, pStatus } = req.body;
+  const { id, classType, price, pStatus, lid, tid } = req.body;
 
   try {
     const [results] = await pool.query(
-      "UPDATE prices SET classType = ?, price = ?, pStatus = ? WHERE id = ?",
-      [classType, price, pStatus, id]
+      "UPDATE prices SET classType = ?, price = ?, pStatus = ?, lid = ?, timetable_id = ? WHERE id = ?",
+      [classType, price, pStatus, lid, tid, id]
     );
 
     if (results.affectedRows === 0) {
@@ -36,6 +47,29 @@ export const updatePrice = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+
+
+export const addPrice = async (req, res) => {
+  const { classType, price, pStatus, tid, lid } = req.body;
+
+  try {
+    // Insert new price record
+    const [results] = await pool.query(
+      "INSERT INTO prices (classType, price, pStatus, timetable_id, lid) VALUES (?, ?, ?, ?, ?)",
+      [classType, price, pStatus, tid, lid]
+    );
+
+    // Check if the record was inserted
+    if (results.affectedRows === 0) {
+      return res.status(400).send('Failed to add price record');
+    }
+
+    res.status(201).send('Price record added successfully');
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 
 export const deletePrice = async (req, res) => {
   const { id } = req.params;
@@ -49,6 +83,21 @@ export const deletePrice = async (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(404).send('Price record not found');
     }
+
+    res.status(200).send('Price record deleted successfully');
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+export const deleteEditPrice = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await pool.query(
+      "DELETE FROM prices WHERE id = ?",
+      [id]
+    );
 
     res.status(200).send('Price record deleted successfully');
   } catch (error) {
@@ -70,7 +119,7 @@ export const addTimetable = async (req, res) => {
     note,
     status,
     year,
-    priceSessions, // Ensure this is included in the request body
+    priceSessions, 
   } = req.body;
 
   if (
@@ -113,12 +162,10 @@ export const addTimetable = async (req, res) => {
     // Insert priceSessions if provided
   if (priceSessions && Array.isArray(priceSessions)) {
     for (const session of priceSessions) {
-      const { id: classTypeId, label: classTypeLabel } = session.classType;
-
       await pool.query(
         `INSERT INTO prices (timetable_id, lid, classType, price, pStatus)
         VALUES (?, ?, ?, ?, ?)`,
-        [timetableId, lecturerId, classTypeLabel, session.price, session.pStatus]
+        [timetableId, lecturerId, session.classType, session.price, session.pStatus]
       );
     }
   }
@@ -176,6 +223,7 @@ export const updateTimetable = async (req, res) => {
 export const deleteTimetable = async (req, res) => {
   const { tid } = req.params;
   try {
+    await pool.query("DELETE FROM prices WHERE timetable_id = ?", [tid]);
     await pool.query("DELETE FROM timetables WHERE tid = ?", [tid]);
     res.status(200).send("Timetable deleted");
   } catch (error) {

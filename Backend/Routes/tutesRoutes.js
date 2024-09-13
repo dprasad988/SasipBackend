@@ -5,6 +5,7 @@ import {
   getAllTutes,
   updateTute,
   deleteTute,
+  getTutesByTeacherId,
 } from "../controllers/tutesController.js";
 
 const storage = multer.memoryStorage();
@@ -17,7 +18,8 @@ const router = express.Router();
 
 router.get('/', getAllTutes);
 router.post('/', upload.any(), createTute);
-router.put('/:id', upload.any(), updateTute);
+router.put('/:tute_id', upload.any(), updateTute);
 router.delete('/:id', deleteTute);
+router.get('/:lid', getTutesByTeacherId);
 
 export default router;

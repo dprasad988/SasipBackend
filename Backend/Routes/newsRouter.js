@@ -5,6 +5,7 @@ import {
   addNews,
   updateNews,
   deleteNews,
+  getNewsCount,
 } from "../controllers/newsController.js";
 const router = express.Router();
 const storage = multer.memoryStorage();
@@ -17,5 +18,6 @@ router.get("/", getAllNews);
 router.post("/",upload, addNews);
 router.put("/:id", updateNews);
 router.delete("/:id", deleteNews);
+router.get('/count', getNewsCount);
 
 export default router;
