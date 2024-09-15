@@ -35,19 +35,25 @@ export const addNews = async (req, res) => {
   const { lid, title, description, whatsapp, newsStatus } = req.body;
   let newsImageUrl = null;
 
+  const currentTimeUtc = new Date();
+  const sriLankanOffset = 5.5 * 60 * 60 * 1000;
+  const sriLankanTime = new Date(currentTimeUtc.getTime() + sriLankanOffset);
+  const formattedTime = sriLankanTime.toISOString().slice(0, 19).replace('T', ' ');
+
   if (req.files['image'] && req.files['image'][0]) {
     const fileBuffer = req.files['image'][0].buffer;
     const remoteFileName = req.files['image'][0].originalname;
     newsImageUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
   }
+
   if (!lid || !title || !description || !whatsapp || !newsStatus) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
     const [result] = await pool.query(
-      "INSERT INTO news (lid, title, description, whatsapp, newsStatus, image) VALUES (?, ?, ?, ?, ?, ?)",
-      [lid, title, description, whatsapp, newsStatus, newsImageUrl]
+      "INSERT INTO news (lid, title, description, whatsapp, newsStatus, image, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [lid, title, description, whatsapp, newsStatus, newsImageUrl, formattedTime]
     );
     res.json({
       lid,
@@ -56,6 +62,7 @@ export const addNews = async (req, res) => {
       whatsapp,
       newsStatus,
       newsImageUrl,
+      created_at: formattedTime,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
