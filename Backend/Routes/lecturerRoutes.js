@@ -6,7 +6,8 @@ import {
   updateLecturer,
   deleteLecturer,
   getLecturerById,
-  getLecturersCount
+  getLecturersCount,
+  deleteQualification
 } from "../controllers/lecturersController.js";
 
 const storage = multer.memoryStorage(); 
@@ -23,5 +24,6 @@ router.post('/', upload.any(), addLecturer);
 router.put('/:lid', upload.any(), updateLecturer);
 router.delete('/:lid', deleteLecturer);
 router.get('/count/new', getLecturersCount);
+router.delete('/qualifications/:id', deleteQualification);
 
 export default router;

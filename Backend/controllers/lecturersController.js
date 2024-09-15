@@ -236,6 +236,30 @@ export const deleteLecturer = async (req, res) => {
   }
 };
 
+export const deleteQualification = async (req, res) => {
+  const { id } = req.params; // Extract the qualification ID from request parameters
+  console.log(id);
+  
+  const connection = await pool.getConnection(); // Get a connection from the pool
+
+  try {
+    await connection.beginTransaction(); // Start a transaction
+
+    // Execute the deletion query
+    await connection.query("DELETE FROM qualifications WHERE id = ?", [id]);
+
+    await connection.commit(); // Commit the transaction if successful
+
+    res.status(200).send("Qualification deleted successfully"); // Send success response
+  } catch (error) {
+    await connection.rollback(); // Rollback the transaction in case of an error
+    res.status(500).send(`Error deleting qualification: ${error.message}`); // Send error response
+  } finally {
+    connection.release(); // Release the connection back to the pool
+  }
+};
+
+
 export const getLecturersCount = async (req, res) => {
   const connection = await pool.getConnection();
 
