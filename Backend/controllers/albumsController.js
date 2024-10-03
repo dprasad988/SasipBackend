@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { uploadFileToSFTP } from '../ftpUpload.js';
+import { deleteFileFromSFTP, uploadFileToSFTP } from '../ftpUpload.js';
 import pool from "../db.js"; 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -102,17 +102,42 @@ export const updateAlbum = async (req, res) => {
     }
   };
     
-// Delete an album
-export const deleteAlbum = async (req, res) => {
-  const { aid } = req.params;
-  try {
-    await pool.query("DELETE FROM albums WHERE aid = ?", [aid]);
-    res.status(200).send("Album deleted");
-  } catch (error) {
-    console.error('Error deleting album:', error);
-    res.status(500).send(`Error deleting album: ${error.message}`);
-  }
-};
+  export const deleteAlbum = async (req, res) => {
+    const { aid } = req.params;
+  
+    try {
+      // Fetch all images associated with the album
+      const [images] = await pool.query("SELECT album_image FROM album_images WHERE album_id = ?", [aid]);
+  
+      // Try to delete each image from SFTP, but skip if the file doesn't exist
+      for (const image of images) {
+        try {
+          await deleteFileFromSFTP(image.album_image);
+        } catch (error) {
+          if (error.message.includes('No such file')) {
+            console.warn(`File not found on SFTP: ${image.album_image}, skipping...`);
+          } else {
+            console.error(`Error deleting image from SFTP: ${image.album_image}`, error);
+            return res.status(500).send(`Error deleting image: ${image.album_image}`);
+          }
+        }
+      }
+  
+      // Delete associated images from the database
+      await pool.query("DELETE FROM album_images WHERE album_id = ?", [aid]);
+  
+      // Delete the album itself from the database
+      await pool.query("DELETE FROM albums WHERE aid = ?", [aid]);
+  
+      // Send success response
+      res.status(200).send("Album and associated images deleted successfully");
+    } catch (error) {
+      console.error('Error deleting album:', error);
+      res.status(500).send(`Error deleting album: ${error.message}`);
+    }
+  };
+  
+
 
 // Get all albums
 export const getAllAlbums = async (req, res) => {

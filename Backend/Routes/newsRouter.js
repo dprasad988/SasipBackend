@@ -5,7 +5,9 @@ import {
   addNews,
   updateNews,
   deleteNews,
+  getNewsCount,
 } from "../controllers/newsController.js";
+
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -16,6 +18,8 @@ import { validateApiCall } from '../Middleware/auth.js';
 
 
 router.get("/", getAllNews);
+
+router.get('/count', getNewsCount);
 router.post("/",validateApiCall,upload, addNews);
 router.put("/:id", validateApiCall,updateNews);
 router.delete("/:id",validateApiCall, deleteNews);

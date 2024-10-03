@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
-import { deleteImage, updateAlbumImages } from "../controllers/albumImagesController.js";
 import { validateApiCall } from '../Middleware/auth.js';
+import { deleteImage, getTotalImagesCount, updateAlbumImages } from "../controllers/albumImagesController.js";
 
 
 const storage = multer.memoryStorage(); 
@@ -14,5 +14,6 @@ const router = express.Router();
 
 router.delete('/:aid', validateApiCall,deleteImage);
 router.put('/:aid',validateApiCall, upload.any(), updateAlbumImages);
+router.get('/count', getTotalImagesCount);
 
 export default router;

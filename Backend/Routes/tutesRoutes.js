@@ -5,6 +5,7 @@ import {
   getAllTutes,
   updateTute,
   deleteTute,
+  getTutesByTeacherId,
 } from "../controllers/tutesController.js";
 import { validateApiCall } from '../Middleware/auth.js';
 
@@ -20,5 +21,9 @@ router.get('/', getAllTutes);
 router.post('/',validateApiCall, upload.any(), createTute);
 router.put('/:id',validateApiCall, upload.any(), updateTute);
 router.delete('/:id',validateApiCall, deleteTute);
+router.post('/', upload.any(), createTute);
+router.put('/:tute_id', upload.any(), updateTute);
+router.delete('/:id', deleteTute);
+router.get('/:lid', getTutesByTeacherId);
 
 export default router;

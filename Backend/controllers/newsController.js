@@ -16,23 +16,44 @@ export const getAllNews = async (req, res) => {
   }
 };
 
+export const getNewsCount = async (req, res) => {
+  const connection = await pool.getConnection();
+
+  try {
+    const [rows] = await connection.query("SELECT COUNT(*) AS count FROM news");
+    const count = rows[0].count;
+    
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    connection.release(); 
+  }
+};
+
 export const addNews = async (req, res) => {
   const { lid, title, description, whatsapp, newsStatus } = req.body;
   let newsImageUrl = null;
+
+  const currentTimeUtc = new Date();
+  const sriLankanOffset = 5.5 * 60 * 60 * 1000;
+  const sriLankanTime = new Date(currentTimeUtc.getTime() + sriLankanOffset);
+  const formattedTime = sriLankanTime.toISOString().slice(0, 19).replace('T', ' ');
 
   if (req.files['image'] && req.files['image'][0]) {
     const fileBuffer = req.files['image'][0].buffer;
     const remoteFileName = req.files['image'][0].originalname;
     newsImageUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
   }
+
   if (!lid || !title || !description || !whatsapp || !newsStatus) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
     const [result] = await pool.query(
-      "INSERT INTO news (lid, title, description, whatsapp, newsStatus, image) VALUES (?, ?, ?, ?, ?, ?)",
-      [lid, title, description, whatsapp, newsStatus, newsImageUrl]
+      "INSERT INTO news (lid, title, description, whatsapp, newsStatus, image, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [lid, title, description, whatsapp, newsStatus, newsImageUrl, formattedTime]
     );
     res.json({
       lid,
@@ -41,6 +62,7 @@ export const addNews = async (req, res) => {
       whatsapp,
       newsStatus,
       newsImageUrl,
+      created_at: formattedTime,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -48,27 +70,51 @@ export const addNews = async (req, res) => {
 };
 
 export const updateNews = async (req, res) => {
-  const { id } = req.params;
-  const { lid, title, description, whatsapp, newsStatus, image } = req.body;
-  if (!lid || !title || !description || !whatsapp || !newsStatus) {
+  const { nid, lid, title, description, whatsapp, newsStatus } = req.body;
+  let newsImageUrl = null;
+
+  // Check if the image file is present in the request
+  if (req.files && req.files['image'] && req.files['image'][0]) {
+    const fileBuffer = req.files['image'][0].buffer;
+    const remoteFileName = req.files['image'][0].originalname;
+    
+    // Upload the image using the same SFTP upload logic from addNews
+    newsImageUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
+  }
+
+  // Check if required fields are present
+  if (!nid || !lid || !title || !description || !whatsapp || !newsStatus) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
+    // If no new image was uploaded, keep the existing image
+    const [existingNews] = await pool.query("SELECT image FROM news WHERE nid = ?", [nid]);
+    const existingImage = existingNews[0]?.image;
+
     const [result] = await pool.query(
       "UPDATE news SET lid = ?, title = ?, description = ?, whatsapp = ?, newsStatus = ?, image = ? WHERE nid = ?",
-      [lid, title, description, whatsapp, newsStatus, image, id]
+      [lid, title, description, whatsapp, newsStatus, newsImageUrl || existingImage, nid] // Use new image if available, else retain old image
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "News not found" });
     }
 
-    res.json({ id, lid, title, description, whatsapp, newsStatus, image });
+    res.json({
+      nid,
+      lid,
+      title,
+      description,
+      whatsapp,
+      newsStatus,
+      image: newsImageUrl || existingImage, // Return new or existing image
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 export const deleteNews = async (req, res) => {
   const { id } = req.params;

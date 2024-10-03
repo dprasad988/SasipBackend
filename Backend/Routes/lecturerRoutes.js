@@ -5,7 +5,9 @@ import {
   addLecturer,
   updateLecturer,
   deleteLecturer,
-  getLecturerById
+  getLecturerById,
+  getLecturersCount,
+  deleteQualification
 } from "../controllers/lecturersController.js";
 import { validateApiCall } from '../Middleware/auth.js';
 
@@ -22,5 +24,6 @@ router.get('/:lid', getLecturerById);
 router.post('/',validateApiCall, upload.any(), addLecturer);
 router.put('/:lid',validateApiCall, upload.any(), updateLecturer);
 router.delete('/:lid',validateApiCall, deleteLecturer);
+router.get('/count/new', getLecturersCount);
 
 export default router;

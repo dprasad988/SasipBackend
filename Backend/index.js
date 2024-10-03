@@ -16,6 +16,8 @@ import  staffRouter from'./Routes/staffRoutes.js';
 import  tutesRoutes from'./Routes/tutesRoutes.js';
 import  authRoutes from'./Routes/authRoutes.js';
 import  contactUsRoutes from'./Routes/contactUsRoutes.js';
+import snowControllRoutes from './Routes/FeatureControl/snowControllRoutes.js'
+import flagControllRoutes from './Routes/FeatureControl/flagControllRoutes.js'
 
 dotenv.config();
 
@@ -42,6 +44,8 @@ app.use('/landing-titles', landingTitlesRouter);
 app.use('/staff', staffRouter);
 app.use('/tutes', tutesRoutes);
 app.use('/contact', contactUsRoutes);
+app.use('/snowControll', snowControllRoutes);
+app.use('/flagControl', flagControllRoutes);
 
 
 app.post('/chat', async (req, res) => {

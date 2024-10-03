@@ -52,11 +52,11 @@ export const addLecturer = async (req, res) => {
       qualificationsWithIcons.push({ ...qualification, icon: iconUrl });
     }
 
-    // Perform the insert query
+    // Perform the insert query for lecturers
     const [result] = await pool.query(
       `INSERT INTO lecturers (
-        profilePicture, name, contact, subject, stream, class_type, medium, bio, experience, social_media_youtube, social_media_facebook, social_media_website, qualifications, rank, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        profilePicture, name, contact, subject, stream, class_type, medium, bio, experience, social_media_youtube, social_media_facebook, social_media_website, rank, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         profilePictureUrl,
         name || null,
@@ -70,19 +70,39 @@ export const addLecturer = async (req, res) => {
         youtube || null,
         facebook || null,
         website || null,
-        JSON.stringify(qualificationsWithIcons) || null,
         rank || null,
         status || null
       ]
     );
 
-    res.status(201).json({ lid: result.insertId });
+    // Insert qualifications into the qualifications table
+    const lecturerId = result.insertId;
+    for (const qualification of qualificationsWithIcons) {
+      await pool.query(
+        `INSERT INTO qualifications (lid, name, icon, description) VALUES (?, ?, ?, ?)`,
+        [
+          lecturerId,
+          qualification.name || null,
+          qualification.icon || null,
+          qualification.description || null
+        ]
+      );
+    }
+
+    res.status(201).json({ lid: lecturerId });
   } catch (error) {
     console.error('Error adding lecturer:', error);
     res.status(500).send(`Error adding lecturer: ${error.message}`);
   }
 };
 
+// Helper function to generate a timestamped filename
+const getTimestampedFilename = (originalname) => {
+  const ext = path.extname(originalname);
+  const baseName = path.basename(originalname, ext);
+  const timestamp = Date.now(); // Current timestamp in milliseconds
+  return `${baseName}_${timestamp}${ext}`;
+};
 
 export const updateLecturer = async (req, res) => {
   const { lid } = req.params;
@@ -98,19 +118,14 @@ export const updateLecturer = async (req, res) => {
     social_media_facebook = '',
     social_media_youtube = '',
     social_media_website = '',
-    qualifications: qualificationsString = '[]',
+    qualifications = [],  // Array of qualifications
     rank = '',
     status = ''
   } = req.body;
-  console.log(req.body);
-  
 
   try {
     // Fetch existing lecturer data
-    const [existingLecturerRows] = await pool.query(
-      `SELECT * FROM lecturers WHERE lid = ?`,
-      [lid]
-    );
+    const [existingLecturerRows] = await pool.query(`SELECT * FROM lecturers WHERE lid = ?`, [lid]);
 
     if (existingLecturerRows.length === 0) {
       return res.status(404).send('Lecturer not found');
@@ -120,35 +135,12 @@ export const updateLecturer = async (req, res) => {
 
     // Initialize fields with existing data or provided data
     let profilePictureUrl = existingLecturer.profilePicture;
-    let qualifications = JSON.parse(qualificationsString) || JSON.parse(existingLecturer.qualifications || '[]');
-    let classTypeUpdate = classType.length ? JSON.stringify(classType) : JSON.stringify(existingLecturer.class_type);
-    let mediumUpdate = medium.length ? JSON.stringify(medium) : JSON.stringify(existingLecturer.medium);
-    let bioUpdate = bio || existingLecturer.bio;
-    let experienceUpdate = experience || existingLecturer.experience;
-    let facebookUpdate = social_media_facebook;
-    let youtubeUpdate = social_media_youtube;
-    let websiteUpdate = social_media_website;
-
-    // Handle profile picture upload if a new one is provided
     const profilePictureFile = req.files.find(file => file.fieldname === 'profilePicture');
     if (profilePictureFile) {
-      profilePictureUrl = await uploadFileToSFTP(profilePictureFile.buffer, profilePictureFile.originalname);
+      profilePictureUrl = await uploadFileToSFTP(profilePictureFile.buffer, getTimestampedFilename(profilePictureFile.originalname));
     }
 
-    // Handle qualifications upload
-    for (const file of req.files) {
-      const match = file.fieldname.match(/qualifications\[(\d+)\]\[icon\]/);
-      if (match) {
-        const qualificationIndex = parseInt(match[1], 10);
-        const iconUrl = await uploadFileToSFTP(file.buffer, file.originalname);
-        qualifications[qualificationIndex] = {
-          ...qualifications[qualificationIndex],
-          icon: iconUrl
-        };
-      }
-    }
-
-    // Construct the update query
+    // Update the lecturer in the lecturers table
     const updateQuery = `
       UPDATE lecturers SET 
         profilePicture = ?, 
@@ -163,7 +155,6 @@ export const updateLecturer = async (req, res) => {
         social_media_youtube = ?, 
         social_media_facebook = ?, 
         social_media_website = ?, 
-        qualifications = ?,
         rank = ?, 
         status = ?
       WHERE lid = ?`;
@@ -174,29 +165,50 @@ export const updateLecturer = async (req, res) => {
       contact || existingLecturer.contact,
       subject || existingLecturer.subject,
       stream || existingLecturer.stream,
-      classTypeUpdate,
-      mediumUpdate,
-      bioUpdate,
-      experienceUpdate,
-      youtubeUpdate,
-      facebookUpdate,
-      websiteUpdate,
-      JSON.stringify(qualifications),
+      JSON.stringify(classType),
+      JSON.stringify(medium),
+      bio || existingLecturer.bio,
+      experience || existingLecturer.experience,
+      social_media_youtube || existingLecturer.social_media_youtube,
+      social_media_facebook || existingLecturer.social_media_facebook,
+      social_media_website || existingLecturer.social_media_website,
       rank || existingLecturer.rank,
       status || existingLecturer.status,
       lid
     ];
 
-    // Perform the update query
     await pool.query(updateQuery, updateValues);
 
-    res.status(200).json({ message: 'Lecturer updated successfully' });
+    // Process qualifications
+    for (let i = 0; i < qualifications.length; i++) {
+      const { id, name, description } = qualifications[i];
+      let iconUrl = null;
+
+      // Check if the icon was uploaded in the files
+      const qualificationIconFile = req.files.find(file => file.fieldname === `qualifications[${i}][icon]`);
+      if (qualificationIconFile) {
+        iconUrl = await uploadFileToSFTP(qualificationIconFile.buffer, getTimestampedFilename(qualificationIconFile.originalname));
+      }
+
+      if (id) {
+        // Update existing qualification
+        await pool.query(`
+          UPDATE qualifications SET name = ?, description = ?, icon = ? WHERE id = ?
+        `, [name, description, iconUrl, id]);
+      } else {
+        // Insert new qualification
+        await pool.query(`
+          INSERT INTO qualifications (lid, name, description, icon) VALUES (?, ?, ?, ?)
+        `, [lid, name, description, iconUrl]);
+      }
+    }
+
+    res.status(200).json({ message: 'Lecturer and qualifications updated successfully' });
   } catch (error) {
     console.error('Error updating lecturer:', error);
     res.status(500).send(`Error updating lecturer: ${error.message}`);
   }
 };
-
 // Delete a lecturer
 export const deleteLecturer = async (req, res) => {
   const { lid } = req.params;
@@ -204,6 +216,8 @@ export const deleteLecturer = async (req, res) => {
 
   try {
     await connection.beginTransaction(); 
+
+    await connection.query("DELETE FROM qualifications WHERE lid = ?", [lid]);
 
     await connection.query("DELETE FROM news WHERE lid = ?", [lid]);
 
@@ -222,12 +236,102 @@ export const deleteLecturer = async (req, res) => {
   }
 };
 
+export const deleteQualification = async (req, res) => {
+  const { id } = req.params; // Extract the qualification ID from request parameters
+  console.log(id);
+  
+  const connection = await pool.getConnection(); // Get a connection from the pool
+
+  try {
+    await connection.beginTransaction(); // Start a transaction
+
+    // Execute the deletion query
+    await connection.query("DELETE FROM qualifications WHERE id = ?", [id]);
+
+    await connection.commit(); // Commit the transaction if successful
+
+    res.status(200).send("Qualification deleted successfully"); // Send success response
+  } catch (error) {
+    await connection.rollback(); // Rollback the transaction in case of an error
+    res.status(500).send(`Error deleting qualification: ${error.message}`); // Send error response
+  } finally {
+    connection.release(); // Release the connection back to the pool
+  }
+};
+
+
+export const getLecturersCount = async (req, res) => {
+  const connection = await pool.getConnection();
+
+  try {
+    const [rows] = await connection.query("SELECT COUNT(*) AS count FROM lecturers");
+    const count = rows[0].count;
+    
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error('Error fetching lecturers count:', error); // Added logging for debugging
+    res.status(500).json({ message: `Error fetching lecturers count: ${error.message}` });
+  } finally {
+    connection.release(); 
+  }
+};
+
+
 // Get all lecturers
 export const getAllLecturers = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM lecturers");
-    res.json(rows);
+    // Perform a join query to get lecturers and their qualifications
+    const [rows] = await pool.query(`
+      SELECT l.*, q.id AS qualification_id, q.name AS qualification_name, q.icon AS qualification_icon, q.description AS qualification_description
+      FROM lecturers l
+      LEFT JOIN qualifications q ON l.lid = q.lid
+    `);
+
+    // Transform the result to group qualifications under each lecturer
+    const lecturers = rows.reduce((acc, row) => {
+      const lecturer = acc.find(l => l.lid === row.lid);
+      if (lecturer) {
+        // If lecturer already exists, add the qualification to the existing qualifications array
+        if (row.qualification_id) {
+          lecturer.qualifications.push({
+            id: row.qualification_id,
+            name: row.qualification_name,
+            icon: row.qualification_icon,
+            description: row.qualification_description
+          });
+        }
+      } else {
+        // If lecturer does not exist, create a new lecturer entry
+        acc.push({
+          lid: row.lid,
+          profilePicture: row.profilePicture,
+          name: row.name,
+          contact: row.contact,
+          subject: row.subject,
+          stream: row.stream,
+          class_type: JSON.parse(row.class_type),
+          medium: JSON.parse(row.medium),
+          bio: row.bio,
+          experience: row.experience,
+          social_media_youtube: row.social_media_youtube,
+          social_media_facebook: row.social_media_facebook,
+          social_media_website: row.social_media_website,
+          rank: row.rank,
+          status: row.status,
+          qualifications: row.qualification_id ? [{
+            id: row.qualification_id,
+            name: row.qualification_name,
+            icon: row.qualification_icon,
+            description: row.qualification_description
+          }] : []
+        });
+      }
+      return acc;
+    }, []);
+
+    res.json(lecturers);
   } catch (error) {
+    console.error('Error retrieving lecturers:', error);
     res.status(500).send(`Error retrieving lecturers: ${error.message}`);
   }
 };
@@ -235,14 +339,59 @@ export const getAllLecturers = async (req, res) => {
 // Get a specific lecturer by ID
 export const getLecturerById = async (req, res) => {
   const { lid } = req.params;
+
   try {
-    const [lecturerRows] = await pool.query("SELECT * FROM lecturers WHERE lid = ?", [lid]);
-    if (lecturerRows.length === 0) {
+    // Perform a join query to get lecturer details and their qualifications
+    const [rows] = await pool.query(`
+      SELECT l.*, q.id AS qualification_id, q.name AS qualification_name, q.icon AS qualification_icon, q.description AS qualification_description
+      FROM lecturers l
+      LEFT JOIN qualifications q ON l.lid = q.lid
+      WHERE l.lid = ?
+    `, [lid]);
+
+    if (rows.length === 0) {
       return res.status(404).send("Lecturer not found");
     }
 
-    res.json({ ...lecturerRows[0] });
+    // Transform the result to include qualifications under the lecturer
+    const lecturer = rows.reduce((acc, row) => {
+      if (!acc) {
+        acc = {
+          lid: row.lid,
+          profilePicture: row.profilePicture,
+          name: row.name,
+          contact: row.contact,
+          subject: row.subject,
+          stream: row.stream,
+          class_type: JSON.parse(row.class_type),
+          medium: JSON.parse(row.medium),
+          bio: row.bio,
+          experience: row.experience,
+          social_media_youtube: row.social_media_youtube,
+          social_media_facebook: row.social_media_facebook,
+          social_media_website: row.social_media_website,
+          rank: row.rank,
+          status: row.status,
+          qualifications: []
+        };
+      }
+
+      if (row.qualification_id) {
+        acc.qualifications.push({
+          id: row.qualification_id,
+          name: row.qualification_name,
+          icon: row.qualification_icon,
+          description: row.qualification_description
+        });
+      }
+
+      return acc;
+    }, null);
+
+    res.json(lecturer);
   } catch (error) {
+    console.error('Error retrieving lecturer:', error);
     res.status(500).send(`Error retrieving lecturer: ${error.message}`);
   }
 };
+
