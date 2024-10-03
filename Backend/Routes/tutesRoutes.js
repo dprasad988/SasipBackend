@@ -19,7 +19,7 @@ const router = express.Router();
 
 router.get('/', getAllTutes);
 router.post('/',validateApiCall, upload.any(), createTute);
-router.put('/:id',validateApiCall, upload.any(), updateTute);
+router.put('/:tute_id',validateApiCall, upload.any(), updateTute);
 router.delete('/:id',validateApiCall, deleteTute);
 router.get('/:lid', getTutesByTeacherId);
 
