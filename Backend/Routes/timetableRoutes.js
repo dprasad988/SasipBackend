@@ -1,7 +1,6 @@
 // routes/lecturerRoutes.js
 import express from 'express';
 import { getAllTimetables, getTimetableById, addTimetable, updateTimetable, deleteTimetable, getPrice, updatePrice, deletePrice, addPrice, deleteEditPrice, getTimetablesCount } from '../controllers/timetableController.js';
-import { getAllTimetables, getTimetableById, addTimetable, updateTimetable, deleteTimetable, getPrice, updatePrice, deletePrice } from '../controllers/timetableController.js';
 import { validateApiCall } from '../Middleware/auth.js';
 
 const router = express.Router();
