@@ -17,7 +17,7 @@ const upload = multer({
 
 router.get("/", getAllNews);
 router.post("/", upload, addNews);
-router.put("/:id", updateNews);
+router.put("/update", upload, updateNews);
 router.delete("/:id", deleteNews);
 router.get('/count', getNewsCount);
 

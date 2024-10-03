@@ -70,41 +70,46 @@ export const addNews = async (req, res) => {
 };
 
 export const updateNews = async (req, res) => {
-  const { id } = req.params;
-  const { lid, title, description, whatsapp, newsStatus } = req.body;
+  const { nid, lid, title, description, whatsapp, newsStatus } = req.body;
   let newsImageUrl = null;
 
-  if (!lid || !title || !description || !whatsapp || !newsStatus) {
+  // Check if the image file is present in the request
+  if (req.files && req.files['image'] && req.files['image'][0]) {
+    const fileBuffer = req.files['image'][0].buffer;
+    const remoteFileName = req.files['image'][0].originalname;
+    
+    // Upload the image using the same SFTP upload logic from addNews
+    newsImageUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
+  }
+
+  // Check if required fields are present
+  if (!nid || !lid || !title || !description || !whatsapp || !newsStatus) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
-    // Check if an image file is uploaded in the request
-    if (req.files && req.files['image'] && req.files['image'][0]) {
-      const fileBuffer = req.files['image'][0].buffer;
-      const remoteFileName = req.files['image'][0].originalname;
-      
-      // Upload the image to your SFTP or file storage service and get the image URL
-      newsImageUrl = await uploadFileToSFTP(fileBuffer, remoteFileName);
-    }
+    // If no new image was uploaded, keep the existing image
+    const [existingNews] = await pool.query("SELECT image FROM news WHERE nid = ?", [nid]);
+    const existingImage = existingNews[0]?.image;
 
-    // If no new image is uploaded, keep the existing one
-    if (!newsImageUrl) {
-      const [existingNews] = await pool.query("SELECT image FROM news WHERE nid = ?", [id]);
-      newsImageUrl = existingNews.length > 0 ? existingNews[0].image : null;
-    }
-
-    // Update the news with the new or existing image URL
     const [result] = await pool.query(
       "UPDATE news SET lid = ?, title = ?, description = ?, whatsapp = ?, newsStatus = ?, image = ? WHERE nid = ?",
-      [lid, title, description, whatsapp, newsStatus, newsImageUrl, id]
+      [lid, title, description, whatsapp, newsStatus, newsImageUrl || existingImage, nid] // Use new image if available, else retain old image
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "News not found" });
     }
 
-    res.json({ id, lid, title, description, whatsapp, newsStatus, image: newsImageUrl });
+    res.json({
+      nid,
+      lid,
+      title,
+      description,
+      whatsapp,
+      newsStatus,
+      image: newsImageUrl || existingImage, // Return new or existing image
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
