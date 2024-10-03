@@ -6,6 +6,7 @@ import {
   updateTute,
   deleteTute,
 } from "../controllers/tutesController.js";
+import { validateApiCall } from '../Middleware/auth.js';
 
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -16,8 +17,8 @@ const upload = multer({
 const router = express.Router();
 
 router.get('/', getAllTutes);
-router.post('/', upload.any(), createTute);
-router.put('/:id', upload.any(), updateTute);
-router.delete('/:id', deleteTute);
+router.post('/',validateApiCall, upload.any(), createTute);
+router.put('/:id',validateApiCall, upload.any(), updateTute);
+router.delete('/:id',validateApiCall, deleteTute);
 
 export default router;

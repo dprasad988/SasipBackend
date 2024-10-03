@@ -7,6 +7,7 @@ import {
   deleteLecturer,
   getLecturerById
 } from "../controllers/lecturersController.js";
+import { validateApiCall } from '../Middleware/auth.js';
 
 const storage = multer.memoryStorage(); 
 const upload = multer({
@@ -18,8 +19,8 @@ const router = express.Router();
 
 router.get('/', getAllLecturers);
 router.get('/:lid', getLecturerById);
-router.post('/', upload.any(), addLecturer);
-router.put('/:lid', upload.any(), updateLecturer);
-router.delete('/:lid', deleteLecturer);
+router.post('/',validateApiCall, upload.any(), addLecturer);
+router.put('/:lid',validateApiCall, upload.any(), updateLecturer);
+router.delete('/:lid',validateApiCall, deleteLecturer);
 
 export default router;

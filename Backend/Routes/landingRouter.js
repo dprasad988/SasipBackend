@@ -7,6 +7,7 @@ import {
   deleteRecordById
 } from '../controllers/landingControllers.js';
 import multer from 'multer';
+import { validateApiCall } from '../Middleware/auth.js';
 
 // Set up multer for in-memory file storage
 const storage = multer.memoryStorage();
@@ -19,10 +20,10 @@ const upload = multer({
 const router = express.Router();
 
 // Route to create a new record
-router.post('/', upload, createRecord);
+router.post('/',validateApiCall, upload, createRecord);
 router.get('/', getAllRecords);
 router.get('/:id', getRecordById);
-router.put('/:id',   updateRecordById);
-router.delete('/:id', deleteRecordById);
+router.put('/:id', validateApiCall,  updateRecordById);
+router.delete('/:id',validateApiCall, deleteRecordById);
 
 export default router;

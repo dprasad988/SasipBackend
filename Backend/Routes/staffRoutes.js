@@ -6,6 +6,7 @@ import {
   updateMember,
   deleteMember,
 } from "../controllers/staffController.js";
+import { validateApiCall } from '../Middleware/auth.js';
 
 // Configure multer to store files in memory
 const storage = multer.memoryStorage();
@@ -18,8 +19,8 @@ const router = express.Router();
 
 // Define routes
 router.get("/", getAllMembers);
-router.post("/", upload.fields([{ name: 'image', maxCount: 1 }]), createMember);
-router.put("/:sid", upload.fields([{ name: 'image', maxCount: 1 }]), updateMember);
-router.delete("/:sid", deleteMember);
+router.post("/",validateApiCall, upload.fields([{ name: 'image', maxCount: 1 }]), createMember);
+router.put("/:sid",validateApiCall, upload.fields([{ name: 'image', maxCount: 1 }]), updateMember);
+router.delete("/:sid",validateApiCall, deleteMember);
 
 export default router;

@@ -15,7 +15,6 @@ export const getAllEntries = async (req, res) => {
 // Create a new form entry
 export const createEntry = async (req, res) => {
     const { title, google_form_link, status } = req.body;
-    console.log(req.body);
     
 
     try {

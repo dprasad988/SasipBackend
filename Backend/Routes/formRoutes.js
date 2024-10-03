@@ -1,5 +1,5 @@
 // routes/formRoutes.js
-
+import { validateApiCall } from '../Middleware/auth.js';
 import { Router } from 'express';
 import { getAllEntries, createEntry, updateEntry, deleteEntry } from '../controllers/formController.js';
 
@@ -9,12 +9,12 @@ const router = Router();
 router.get('/', getAllEntries);
 
 // Create a new form entry
-router.post('/', createEntry);
+router.post('/', validateApiCall , createEntry);
 
 // Update an existing form entry
-router.put('/:id', updateEntry);
+router.put('/:id', validateApiCall,updateEntry);
 
 // Delete a form entry
-router.delete('/:id', deleteEntry);
+router.delete('/:id',validateApiCall, deleteEntry);
 
 export default router;

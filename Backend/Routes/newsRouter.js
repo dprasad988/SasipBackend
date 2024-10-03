@@ -12,10 +12,12 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
 }).fields([{ name: "image", maxCount: 1 }]);
+import { validateApiCall } from '../Middleware/auth.js';
+
 
 router.get("/", getAllNews);
-router.post("/",upload, addNews);
-router.put("/:id", updateNews);
-router.delete("/:id", deleteNews);
+router.post("/",validateApiCall,upload, addNews);
+router.put("/:id", validateApiCall,updateNews);
+router.delete("/:id",validateApiCall, deleteNews);
 
 export default router;

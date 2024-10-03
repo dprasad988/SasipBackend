@@ -6,6 +6,7 @@ import {
   updateAlbum,
   deleteAlbum,
 } from "../controllers/albumsController.js";
+import { validateApiCall } from '../Middleware/auth.js';
 
 const storage = multer.memoryStorage(); 
 const upload = multer({
@@ -16,8 +17,8 @@ const upload = multer({
 const router = express.Router();
 
 router.get('/', getAllAlbums);
-router.post('/', upload.any(), createAlbum);
-router.put('/:aid', upload.any(), updateAlbum);
-router.delete('/:aid', deleteAlbum);
+router.post('/',validateApiCall, upload.any(), createAlbum);
+router.put('/:aid',validateApiCall, upload.any(), updateAlbum);
+router.delete('/:aid',validateApiCall, deleteAlbum);
 
 export default router;
