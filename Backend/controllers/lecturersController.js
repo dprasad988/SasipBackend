@@ -20,6 +20,8 @@ export const addLecturer = async (req, res) => {
     youtube = '',
     website = '' ,
     qualifications = [],
+    rank = '',
+    status = ''
   } = req.body;
 
   console.log('Adding Lecturer:', req.body);
@@ -53,8 +55,8 @@ export const addLecturer = async (req, res) => {
     // Perform the insert query
     const [result] = await pool.query(
       `INSERT INTO lecturers (
-        profilePicture, name, contact, subject, stream, class_type, medium, bio, experience, social_media_youtube, social_media_facebook, social_media_website, qualifications
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        profilePicture, name, contact, subject, stream, class_type, medium, bio, experience, social_media_youtube, social_media_facebook, social_media_website, qualifications, rank, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         profilePictureUrl,
         name || null,
@@ -69,6 +71,8 @@ export const addLecturer = async (req, res) => {
         facebook || null,
         website || null,
         JSON.stringify(qualificationsWithIcons) || null,
+        rank || null,
+        status || null
       ]
     );
 
@@ -95,6 +99,8 @@ export const updateLecturer = async (req, res) => {
     social_media_youtube = '',
     social_media_website = '',
     qualifications: qualificationsString = '[]',
+    rank = '',
+    status = ''
   } = req.body;
   console.log(req.body);
   
@@ -157,7 +163,9 @@ export const updateLecturer = async (req, res) => {
         social_media_youtube = ?, 
         social_media_facebook = ?, 
         social_media_website = ?, 
-        qualifications = ?
+        qualifications = ?,
+        rank = ?, 
+        status = ?
       WHERE lid = ?`;
 
     const updateValues = [
@@ -174,6 +182,8 @@ export const updateLecturer = async (req, res) => {
       facebookUpdate,
       websiteUpdate,
       JSON.stringify(qualifications),
+      rank || existingLecturer.rank,
+      status || existingLecturer.status,
       lid
     ];
 
@@ -190,11 +200,25 @@ export const updateLecturer = async (req, res) => {
 // Delete a lecturer
 export const deleteLecturer = async (req, res) => {
   const { lid } = req.params;
+  const connection = await pool.getConnection();
+
   try {
-    await pool.query("DELETE FROM lecturers WHERE lid = ?", [lid]); 
-    res.status(200).send("Lecturer deleted");
+    await connection.beginTransaction(); 
+
+    await connection.query("DELETE FROM news WHERE lid = ?", [lid]);
+
+    await connection.query("DELETE FROM tutes WHERE lid = ?", [lid]);
+
+    await connection.query("DELETE FROM lecturers WHERE lid = ?", [lid]);
+
+    await connection.commit();
+
+    res.status(200).send("Lecturer and associated news and tutes entries deleted successfully");
   } catch (error) {
+    await connection.rollback(); 
     res.status(500).send(`Error deleting lecturer: ${error.message}`);
+  } finally {
+    connection.release(); 
   }
 };
 
