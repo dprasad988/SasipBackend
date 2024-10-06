@@ -18,6 +18,7 @@ import authRoutes from "./Routes/authRoutes.js";
 import contactUsRoutes from "./Routes/contactUsRoutes.js";
 import snowControllRoutes from "./Routes/FeatureControl/snowControllRoutes.js";
 import flagControllRoutes from "./Routes/FeatureControl/flagControllRoutes.js";
+import visitCountRoutes from "./Routes/visitCountRoutes.js"
 
 dotenv.config();
 
@@ -46,6 +47,8 @@ app.use("/tutes", tutesRoutes);
 app.use("/contact", contactUsRoutes);
 app.use("/snowControll", snowControllRoutes);
 app.use("/flagControl", flagControllRoutes);
+app.use("/visitCount", visitCountRoutes);
+
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { log } from "console";
