@@ -16,6 +16,7 @@ import staffRouter from "./Routes/staffRoutes.js";
 import tutesRoutes from "./Routes/tutesRoutes.js";
 import authRoutes from "./Routes/authRoutes.js";
 import contactUsRoutes from "./Routes/contactUsRoutes.js";
+import yearRoutes from "./Routes/yearRoutes.js";
 import snowControllRoutes from "./Routes/FeatureControl/snowControllRoutes.js";
 import flagControllRoutes from "./Routes/FeatureControl/flagControllRoutes.js";
 
@@ -46,7 +47,7 @@ app.use("/tutes", tutesRoutes);
 app.use("/contact", contactUsRoutes);
 app.use("/snowControll", snowControllRoutes);
 app.use("/flagControl", flagControllRoutes);
-
+app.use('/years', yearRoutes);
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { log } from "console";
 
