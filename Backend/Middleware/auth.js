@@ -30,7 +30,6 @@ export const validateApiCall = (req, res, next) => {
     req.user = verified;
     next(); 
   } catch (err) {
-    console.error(err); 
     res.status(400).send('Invalid Token');
   }
 };

@@ -131,7 +131,6 @@ export const addTimetable = async (req, res) => {
     !medium ||
     !day ||
     !time ||
-    !status ||
     !year
   ) {
     return res.status(400).send("Missing required fields");
@@ -152,7 +151,7 @@ export const addTimetable = async (req, res) => {
         day,
         time,
         note,
-        status,
+        status || 'Visible',
         year,
         createdAt,
       ]
@@ -161,13 +160,16 @@ export const addTimetable = async (req, res) => {
 
     // Insert priceSessions if provided
   if (priceSessions && Array.isArray(priceSessions)) {
-    for (const session of priceSessions) {
-      await pool.query(
-        `INSERT INTO prices (timetable_id, lid, classType, price, pStatus)
-        VALUES (?, ?, ?, ?, ?)`,
-        [timetableId, lecturerId, session.classType, session.price, session.pStatus]
-      );
+    if(priceSessions.length>0){
+      for (const session of priceSessions) {
+        await pool.query(
+          `INSERT INTO prices (timetable_id, lid, classType, price, pStatus)
+          VALUES (?, ?, ?, ?, ?)`,
+          [timetableId, lecturerId, session.classType, session.price, session.pStatus]
+        );
+      }
     }
+   
   }
 
     res.status(201).json({ tid: timetableId });
