@@ -1,7 +1,7 @@
 import pool from "../db.js";
 import { fileURLToPath } from 'url';
 import { uploadFileToSFTP } from '../ftpUpload.js';
-import { deleteFileFromSFTP } from '../ftpUpload.js';
+// import { deleteFileFromSFTP } from '../ftpUpload.js';
 import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -126,12 +126,12 @@ export const deleteNews = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: "News not found" });
     }
-    const newsImageUrl = rows[0].image;
+    // const newsImageUrl = rows[0].image;
  
-    // Delete the image from SFTP if it exists
-    if (newsImageUrl) {
-      await deleteFileFromSFTP(newsImageUrl);
-    }
+    // // Delete the image from SFTP if it exists
+    // if (newsImageUrl) {
+    //   await deleteFileFromSFTP(newsImageUrl);
+    // }
 
     // Delete the news record from the database
     const [result] = await pool.query("DELETE FROM news WHERE nid = ?", [id]);

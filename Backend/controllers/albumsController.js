@@ -110,18 +110,18 @@ export const updateAlbum = async (req, res) => {
       const [images] = await pool.query("SELECT album_image FROM album_images WHERE album_id = ?", [aid]);
   
       // Try to delete each image from SFTP, but skip if the file doesn't exist
-      for (const image of images) {
-        try {
-          await deleteFileFromSFTP(image.album_image);
-        } catch (error) {
-          if (error.message.includes('No such file')) {
-            console.warn(`File not found on SFTP: ${image.album_image}, skipping...`);
-          } else {
-            console.error(`Error deleting image from SFTP: ${image.album_image}`, error);
-            return res.status(500).send(`Error deleting image: ${image.album_image}`);
-          }
-        }
-      }
+      // for (const image of images) {
+      //   try {
+      //     await deleteFileFromSFTP(image.album_image);
+      //   } catch (error) {
+      //     if (error.message.includes('No such file')) {
+      //       console.warn(`File not found on SFTP: ${image.album_image}, skipping...`);
+      //     } else {
+      //       console.error(`Error deleting image from SFTP: ${image.album_image}`, error);
+      //       return res.status(500).send(`Error deleting image: ${image.album_image}`);
+      //     }
+      //   }
+      // }
   
       // Delete associated images from the database
       await pool.query("DELETE FROM album_images WHERE album_id = ?", [aid]);
