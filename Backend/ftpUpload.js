@@ -30,7 +30,7 @@ export async function uploadFileToSFTP(fileBuffer, providedFileName = null) {
 
         // Update the remote path to the correct directory with the random filename
         const remoteFilePath = `/home/u543552070/domains/orangered-quail-934133.hostingersite.com/public_html/NewSasip Resources/Images/${randomFileName}`;
-        console.log('Uploading file to', remoteFilePath);
+    
 
         // Create a write stream for the remote file
         const writeStream = sftp.createWriteStream(remoteFilePath);

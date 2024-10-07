@@ -2,7 +2,11 @@ import pool from "../db.js";
 
 export const getAllTimetables = async (req, res) => {
   try {
-    const [results] = await pool.query("SELECT * FROM timetables");
+    const [results] = await pool.query(`
+      SELECT timetables.*, lecturers.rank 
+      FROM timetables
+      JOIN lecturers ON timetables.lid = lecturers.lid
+    `);
     res.json(results);
   } catch (error) {
     res.status(500).send(error.message);

@@ -89,12 +89,12 @@ export const deleteRecordById = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: "News not found" });
     }
-    const newsImageUrl = rows[0].image;
+    // const newsImageUrl = rows[0].image;
 
-    // Delete the image from SFTP if it exists
-    if (newsImageUrl) {
-      await deleteFileFromSFTP(newsImageUrl);
-    }
+    // // // Delete the image from SFTP if it exists
+    // if (newsImageUrl) {
+    //   await deleteFileFromSFTP(newsImageUrl);
+    // }
     const [results] = await db.execute(query, [id]);
     if (results.affectedRows === 0)
       return res.status(404).json({ message: "Record not found" });

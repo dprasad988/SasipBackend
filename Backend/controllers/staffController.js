@@ -77,13 +77,13 @@ export const deleteMember = async (req, res) => {
         const [rows] = await db.query('SELECT image FROM Members WHERE sid = ?', [sid]);
         const member = rows[0];
 
-        if (member && member.image) {
-            try {
-                await deleteFileFromSFTP(member.image);
-            } catch (error) {
-                return res.status(500).json({ error: 'Failed to delete image from SFTP server' });
-            }
-        }
+        // if (member && member.image) {
+        //     try {
+        //         // await deleteFileFromSFTP(member.image);
+        //     } catch (error) {
+        //         return res.status(500).json({ error: 'Failed to delete image from SFTP server' });
+        //     }
+        // }
 
         await db.query('DELETE FROM Members WHERE sid = ?', [sid]);
         res.json({ message: 'Member deleted successfully.' });
