@@ -5,7 +5,6 @@ export const getCount = async (req, res) => {
   try {
     const [result] = await db.query('SELECT count FROM visit_counter WHERE id = 1');
     res.json({ count: result[0].count });
-    console.log(result);
     
   } catch (error) {
     console.error('Error fetching visit count:', error);
