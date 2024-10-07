@@ -16,7 +16,7 @@ export async function uploadFileToSFTP(fileBuffer, providedFileName = null) {
   };
 
   // Generate a random filename if one is not provided
-  const randomFileName = providedFileName ? providedFileName : `${uuidv4()}-${Date.now()}`;
+  const randomFileName ="SASIP"+`${uuidv4()}-${Date.now()}`;
 
   return new Promise((resolve, reject) => {
     conn.on('ready', () => {
