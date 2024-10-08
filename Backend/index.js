@@ -23,7 +23,7 @@ import visitCountRoutes from "./Routes/visitCountRoutes.js"
 
 dotenv.config();
 
-const port = 5005;
+const port = 80;
 const app = express();
 
 // Middleware setup
